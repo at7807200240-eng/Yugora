@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>YUGORA | Virtual Job Simulation</title>
+    <style>
+        :root {
+            --bg-main: #0b1120;
+            --bg-panel: rgba(15, 23, 42, 0.6);
+            --bg-input: #020617;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.6);
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.5);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            background-color: var(--bg-main);
+            background-image:
+                radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+                linear-gradient(rgba(51, 65, 85, 0.15) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(51, 65, 85, 0.15) 1px, transparent 1px);
+            background-size: 100% 100%, 30px 30px, 30px 30px;
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .navbar h1 {
+            margin: 0; font-size: 26px; letter-spacing: 4px;
+            background: linear-gradient(to right, #38bdf8, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        .score-display {
+            font-size: 14px; font-weight: bold;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            padding: 8px 20px; border-radius: 20px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            display: none;
+            box-shadow: 0 0 15px var(--success-glow);
+            letter-spacing: 1px;
+        }
+
+        /* UPGRADED HOME SCREEN */
+        .home-layout {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 85vh;
+            gap: 40px;
+            padding: 40px 20px;
+            box-sizing: border-box;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .role-card {
+            background: var(--bg-panel);
+            padding: 50px 50px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.02);
+            backdrop-filter: blur(20px);
+            width: 100%;
+            max-width: 480px;
+            text-align: center;
+            animation: cardEntrance 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .role-card::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+            transform: skewX(-20deg); animation: shine 3s infinite;
+        }
+
+        .uni-badge {
+            display: inline-block; padding: 6px 14px; background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 20px; color: #60a5fa;
+            font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 25px;
+        }
+
+        .role-card h2 { margin: 0 0 10px 0; font-size: 32px; letter-spacing: 1px; text-shadow: 0 0 20px rgba(255,255,255,0.2); }
+        .role-card p { color: var(--text-muted); margin-bottom: 35px; font-size: 15px; line-height: 1.5; }
+
+        .select-wrapper { position: relative; margin-bottom: 30px; text-align: left; }
+        .select-wrapper label { display: block; font-size: 12px; color: #60a5fa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+
+        select {
+            width: 100%; padding: 16px; font-size: 16px; border-radius: 10px;
+            border: 1px solid rgba(59, 130, 246, 0.3); background: rgba(2, 6, 23, 0.8);
+            color: var(--text-main); outline: none; transition: 0.3s; appearance: none; cursor: pointer;
+        }
+        select:focus, select:hover { border-color: var(--primary); box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); background: var(--bg-input); }
+
+        .start-btn {
+            width: 100%; padding: 16px; font-size: 15px; background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: white; border: none; border-radius: 10px; cursor: pointer;
+            font-weight: bold; text-transform: uppercase; letter-spacing: 2px; transition: 0.3s;
+            position: relative; overflow: hidden;
+        }
+        .start-btn:hover { background: linear-gradient(135deg, #1d4ed8, #2563eb); box-shadow: 0 0 25px var(--primary-glow); transform: translateY(-2px); }
+
+        /* STATIC INFO BOXES */
+        .info-grid {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 900px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .info-box {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px 25px;
+            flex: 1;
+            min-width: 250px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .info-box:hover {
+            transform: translateY(-5px);
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+
+        .info-box h4 {
+            margin: 0 0 15px 0;
+            color: #60a5fa;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-box ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.8;
+            text-align: left;
+        }
+
+        .info-box ul li::before {
+            content: "▹";
+            color: var(--success);
+            margin-right: 8px;
+            font-size: 16px;
+        }
+
+        /* WORKSPACE STYLES */
+        #workspace-screen { display: none; padding: 40px max(20px, 5vw); animation: fadeIn 0.8s ease-out; }
+        .workspace-header { margin-bottom: 25px; border-bottom: 1px solid var(--border); padding-bottom: 15px;}
+        .workspace-header h2 { margin: 0; font-size: 20px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;}
+
+        .container { display: flex; gap: 25px; flex-wrap: wrap; }
+        .panel {
+            background: var(--bg-panel); backdrop-filter: blur(16px);
+            padding: 25px; border-radius: 12px; border: 1px solid var(--border);
+            flex: 1; min-width: 400px; display: flex; flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .panel h3 { margin-top: 0; display: flex; align-items: center; gap: 10px; margin-bottom: 20px; font-size: 18px;}
+
+        .chat-box {
+            flex-grow: 1; height: 400px; overflow-y: auto; padding: 20px;
+            margin-bottom: 20px; background: rgba(0,0,0,0.5); border-radius: 8px;
+            border: 1px solid var(--border); display: flex; flex-direction: column; gap: 15px;
+        }
+
+        .chat-msg { max-width: 85%; padding: 12px 18px; border-radius: 12px; line-height: 1.5; font-size: 15px; animation: slideUp 0.3s ease-out;}
+        .msg-system { background: transparent; color: var(--text-muted); align-self: center; font-style: italic; font-size: 14px; }
+        .msg-user { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 2px; box-shadow: 0 4px 15px var(--primary-glow);}
+        .msg-ai { background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border); align-self: flex-start; border-bottom-left-radius: 2px;}
+
+        input[type="text"] {
+            width: 100%; padding: 14px; background: var(--bg-input); border: 1px solid var(--border);
+            color: var(--text-main); border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; transition: 0.3s;
+        }
+        input[type="text"]:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 10px var(--primary-glow); }
+
+        textarea {
+            width: 100%; padding: 16px; box-sizing: border-box; border: 1px solid var(--border);
+            border-radius: 8px; background: #000000; color: #34d399; font-family: 'Consolas', monospace;
+            font-size: 15px; line-height: 1.6; margin-bottom: 15px; resize: vertical; transition: 0.3s;
+        }
+        textarea:focus { outline: none; border-color: var(--success); box-shadow: 0 0 10px var(--success-glow); }
+
+        .qa-btn { background: var(--success); width: 100%; padding: 14px; font-size: 15px; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.2s; }
+        .qa-btn:hover { background: #059669; box-shadow: 0 0 20px var(--success-glow); transform: translateY(-1px);}
+
+        #qaFeedback {
+            margin-top: 20px; padding: 15px; background: var(--bg-input);
+            border: 1px solid var(--border); border-radius: 8px; font-size: 15px; line-height: 1.6;
+        }
+
+        /* Animations */
+        @keyframes cardEntrance { from { opacity: 0; transform: translateY(30px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes shine { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .typing-indicator { display: flex; gap: 5px; padding: 5px 10px; align-items: center;}
+        .dot { width: 8px; height: 8px; background: var(--text-muted); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+        .xp-popup {
+            position: fixed; top: 80px; right: 40px; color: var(--success); font-weight: bold; font-size: 24px;
+            text-shadow: 0 0 10px var(--success-glow); animation: floatUp 2s forwards; pointer-events: none; z-index: 1000;
+        }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-50px) scale(1.5); } }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <h1>YUGORA</h1>
+        <div id="nav-score" class="score-display">SKILL GENOME: <span id="score">0</span> XP</div>
+    </div>
+
+    <!-- HOME SCREEN -->
+    <div id="home-screen" class="home-layout">
+        <div class="role-card">
+            <div class="uni-badge">Yogananda School of AI, Computers and Data Science</div>
+            <h2>Virtual Internship</h2>
+            <p>Authentication complete. Initialize your local AI simulation environment to begin your assessment.</p>
+
+            <div class="select-wrapper">
+                <label for="roleSelect">Target Position</label>
+                <select id="roleSelect">
+                    <option value="python_dev">Junior Python Developer</option>
+                    <option value="data_analyst" disabled>Data Analyst (Locked)</option>
+                </select>
+            </div>
+
+            <button class="start-btn" onclick="startSimulation()">Initialize Workspace</button>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-box">
+                <h4>🟢 System Status</h4>
+                <ul>
+                    <li>Llama 3 Engine: Local / Active</li>
+                    <li>FastAPI Backend: Online</li>
+                    <li>State Memory: In-Memory DB</li>
+                </ul>
+            </div>
+            <div class="info-box">
+                <h4>📐 SDLC Methodologies</h4>
+                <ul>
+                    <li>Standard Agile Flow</li>
+                    <li>Iterative Spiral Model</li>
+                    <li>Verification & Validation (V-Model)</li>
+                </ul>
+            </div>
+            <div class="info-box">
+                <h4>🎯 Assessment Tracks</h4>
+                <ul>
+                    <li>Algorithmic Logic</li>
+                    <li>API Integration Frameworks</li>
+                    <li>Automated QA Pipelines</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- WORKSPACE SCREEN -->
+    <div id="workspace-screen">
+        <div class="workspace-header">
+            <h2 id="workspace-title">Active Role: Junior Python Developer</h2>
+        </div>
+
+        <div class="container">
+            <div class="panel">
+                <h3>💬 Manager Terminal (Alex)</h3>
+                <div id="chat" class="chat-box"></div>
+                <input type="text" id="msgInput" placeholder="Type a message to your manager..." onkeypress="handleKeyPress(event)">
+                <button class="start-btn" onclick="sendMessage()">Send Message</button>
+            </div>
+
+            <div class="panel">
+                <h3>💻 QA Evaluation (Sarah)</h3>
+                <textarea id="codeInput" rows="16" placeholder="# Write your Python code here...&#10;&#10;def extract_titles(urls):&#10;    pass"></textarea>
+                <button class="qa-btn" onclick="submitCode()">Execute Code & Review</button>
+                <div id="qaFeedback">
+                    <span style="color: var(--text-muted);"><i>Awaiting code submission...</i></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        const studentId = "student_demo_1";
+        let currentScore = 0;
+
+        function startSimulation() {
+            document.getElementById("home-screen").style.display = "none";
+            document.getElementById("workspace-screen").style.display = "block";
+            document.getElementById("nav-score").style.display = "block";
+            document.getElementById("chat").innerHTML = `<div class="chat-msg msg-system">System: Workspace initialized. Secure connection established.</div>`;
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
+
+        function showTypingIndicator(elementId) {
+            const box = document.getElementById(elementId);
+            const id = 'typing-' + Date.now();
+            box.innerHTML += `
+                <div id="${id}" class="chat-msg msg-ai typing-indicator">
+                    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                </div>`;
+            box.scrollTop = box.scrollHeight;
+            return id;
+        }
+
+        async function sendMessage() {
+            const msgInput = document.getElementById("msgInput");
+            const msg = msgInput.value.trim();
+            if (!msg) return;
+
+            const chatBox = document.getElementById("chat");
+            chatBox.innerHTML += `<div class="chat-msg msg-user">${msg}</div>`;
+            msgInput.value = "";
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            const typingId = showTypingIndicator("chat");
+
+            try {
+                const response = await fetch("/chat/manager", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ student_id: studentId, user_message: msg })
+                });
+                const data = await response.json();
+
+                document.getElementById(typingId).remove();
+                chatBox.innerHTML += `<div class="chat-msg msg-ai"><b>Alex:</b><br>${data.message.replace(/\n/g, '<br>')}</div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } catch (error) {
+                document.getElementById(typingId).remove();
+                chatBox.innerHTML += `<div class="chat-msg msg-system" style="color: #ef4444;">Connection error.</div>`;
+            }
+        }
+
+        function triggerXPAnimation(points) {
+            const xp = document.createElement("div");
+            xp.className = "xp-popup";
+            xp.innerText = `+${points} XP`;
+            document.body.appendChild(xp);
+            setTimeout(() => xp.remove(), 2000);
+
+            const scoreDisplay = document.getElementById("nav-score");
+            scoreDisplay.style.boxShadow = "0 0 30px var(--success)";
+            setTimeout(() => scoreDisplay.style.boxShadow = "0 0 15px var(--success-glow)", 500);
+        }
+
+        async function submitCode() {
+            const code = document.getElementById("codeInput").value.trim();
+            if (!code) return;
+
+            const feedbackBox = document.getElementById("qaFeedback");
+            feedbackBox.innerHTML = `
+                <div class="typing-indicator" style="justify-content: center; padding: 20px;">
+                    <span style='color: var(--primary); margin-right: 10px;'><i>Executing</i></span>
+                    <div class="dot" style="background: var(--primary);"></div>
+                    <div class="dot" style="background: var(--primary);"></div>
+                    <div class="dot" style="background: var(--primary);"></div>
+                </div>`;
+
+            try {
+                const response = await fetch("/submit_code", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ student_id: studentId, code: code })
+                });
+                const data = await response.json();
+
+                let statusColor = data.qa_status === "Success" ? "var(--success)" : "#ef4444";
+
+                feedbackBox.innerHTML = `
+                    <div style="margin-bottom: 10px;">
+                        <b style="color: ${statusColor}; font-size: 16px;">[${data.qa_status.toUpperCase()}]</b>
+                    </div>
+                    <div style="animation: fadeIn 0.5s;">${data.feedback.replace(/\n/g, '<br>')}</div>
+                `;
+
+                if (data.new_genome_score > currentScore) {
+                    triggerXPAnimation(data.new_genome_score - currentScore);
+                    currentScore = data.new_genome_score;
+                }
+
+                document.getElementById("score").innerText = currentScore;
+            } catch (error) {
+                feedbackBox.innerHTML = `<span style="color: #ef4444;">Error connecting to server.</span>`;
+            }
+        }
+    </script>
+</body>
+</html>
